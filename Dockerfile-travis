@@ -1,0 +1,41 @@
+FROM ubuntu:14.04
+
+RUN apt-get -y update
+
+RUN apt-get install -y wget bzip2 git build-essential
+
+RUN apt-get install -y wget && if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then \
+        wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh; \
+    else \
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; \
+    fi
+
+ENV HOME=/root
+
+RUN bash miniconda.sh -b -p $HOME/miniconda
+
+ENV PATH="${HOME}/miniconda/bin:${PATH}"
+
+RUN hash -r
+
+RUN $HOME/miniconda/bin/conda config --set always_yes yes --set changeps1 no
+
+RUN $HOME/miniconda/bin/conda update -q conda
+
+RUN $HOME/miniconda/bin/conda info -a
+
+ENV TRAVIS_PYTHON_VERSION_1 2.7
+
+ENV TRAVIS_PYTHON_VERSION_2 3.5
+
+RUN git clone https://github.com/rushter/MLAlgorithms.git $HOME/MLAlgorithms
+
+WORKDIR $HOME/MLAlgorithms
+
+RUN $HOME/miniconda/bin/conda create -q -n test-env-27 python=$TRAVIS_PYTHON_VERSION_1
+
+RUN $HOME/miniconda/envs/test-env-27/bin/pip install pytest && $HOME/miniconda/envs/test-env-27/bin/pip install -r requirements.txt
+
+RUN $HOME/miniconda/bin/conda create -q -n test-env-35 python=$TRAVIS_PYTHON_VERSION_2
+
+RUN $HOME/miniconda/envs/test-env-27/bin/pip install pytest && $HOME/miniconda/envs/test-env-27/bin/pip install -r requirements.txt
